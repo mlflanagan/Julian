@@ -6,7 +6,6 @@ Utility functions for astronomical calculations
 Python 3.8
 """
 
-import datetime
 import math
 from typing import Tuple
 
@@ -16,14 +15,16 @@ DEGREES_PER_MINUTE = 360 / 1440
 DEGREES_PER_SECOND = 360 / 86400
 
 
-def hms_to_degrees(hours: int, minutes: int, seconds: int) -> float:
+def time_to_angle(hours: int, minutes: int, seconds: float) -> float:
     """
     Convert hours, minutes, seconds to degrees
     """
-    return hours * DEGREES_PER_HOUR + minutes * DEGREES_PER_MINUTE + seconds * DEGREES_PER_SECOND
+    return round(hours * DEGREES_PER_HOUR
+                 + minutes * DEGREES_PER_MINUTE
+                 + seconds * DEGREES_PER_SECOND, 6)
 
 
-def degrees_to_hms(degrees: float) -> Tuple[int, int, float]:
+def angle_to_time(degrees: float) -> Tuple[int, int, float]:
     """
     Convert degrees to hours, minutes, seconds time tuple
     """
@@ -48,6 +49,7 @@ def day_fraction(hours: int, minutes: int, seconds: int, milliseconds: int) -> f
     """
     Convert hours, minutes, seconds, and milliseconds into a fraction of a day.
     E.g., 12 hours, 0 minutes, 0 seconds, 0 millis = 0.5 day.
+    TODO: Accept a time struct
     """
     return hours / 24.0 + minutes / 1440.0 + (seconds + milliseconds / 1000.0) / 86400.0
 
@@ -88,3 +90,41 @@ def julian_day(year: int, month: int, day: float) -> float:
 
     return jd
 
+
+def sidereal_time(year: int, month: int, day: int, hours: int, minutes: int, seconds: float, longitude: float) -> float:
+    """
+    Return sidereal time for given year, month, day, hours, minutes, seconds and longitude.
+    Accepts partial days (e.g., 1.5 for noon on the 1st of a month).
+    TODO: Accept a datetime struct
+    Reference: www.dept.aoe.vt.edu/~cdhall/courses/aoe4134/13LocalSiderealTime.pdf
+    """
+
+    # get julian date
+    jd = julian_day(year, month, day)  # 2452248.5
+
+    # calculate the Greenwich sidereal time at the beginning of the day of interest
+    t_ut1 = round((jd - 2451545.0) / 36525, 8)  # 0.01926078
+
+    # Calculate Greenwich Sidereal Time with:
+    #   GST = 100.4606184 + 36000.77005361 * t_ut1 + 0.00038793 * t_ut1**2 + 2.6e-8 * t_ut1**3
+    # - drop the last term since it is negligible
+    # - modulus to get it in the range 0-360
+    # - round to some reasonable precision
+    # 100.46 degrees = the value needed to make the expression yield the correct value for GMST at
+    # 0h UT on 1 January 2000.
+    gst = (100.4606184 + 36000.77005361 * t_ut1 + 0.00038793 * t_ut1**2) % 360
+    gst = round(gst, 7)  # 73.8635304
+
+    # account for time of day
+    # a sidereal day is 23 hours, 56 minutes, 4.09053 seconds, or 1436.0681755 minutes
+    # 360 / 1436.0681755 = 0.250684477340122 degrees / day (this guy's precision is a little better than mine)
+    degrees_per_minute = 0.25068447733746215
+    gst += round(degrees_per_minute * (hours * 60 + minutes + seconds / 60), 7)
+
+    # calculate LST by adding the longitude
+    lst = round(gst + longitude, 7)
+
+    return lst
+
+
+print(sidereal_time(2001, 12, 5, 18, 45, 30, -80.408333))  # 275.600766 deg
