@@ -34,7 +34,7 @@ def degrees_to_hms(degrees: float) -> Tuple[int, int, float]:
     return int(hours), int(minutes), seconds
 
 
-def is_leap(year):
+def is_leap(year: int) -> bool:
     """
     Return a boolean indicating whether the given year is a leap year.
 
@@ -52,7 +52,7 @@ def day_fraction(hours: int, minutes: int, seconds: int, milliseconds: int) -> f
     return hours / 24.0 + minutes / 1440.0 + (seconds + milliseconds / 1000.0) / 86400.0
 
 
-def is_julian(year, month, day):
+def is_julian(year: int, month: int, day: int) -> bool:
     """
     Return a boolean indicating whether the given date is on the Julian calendar (i.e., before
     1582 October 15).
@@ -65,25 +65,26 @@ def is_julian(year, month, day):
     return year < 1582 or year == 1582 and (month < 10 or month == 10 and day < 15)
 
 
-def julian_day(y, m, d):
+def julian_day(year: int, month: int, day: float) -> float:
     """
     Return Julian day for the given year, month, day.
+    Accepts partial days (e.g., 1.5 for noon on the first day of the month).
     Reference: Meeus, Jean: Astronomical Algorithms Second Edition (1998).
     """
 
     # if the date is in Jan or Feb, it is considered to be
     # the 13th or 14th month of the preceding year
-    if m == 1 or m == 2:
-        y -= 1
-        m += 12
+    if month == 1 or month == 2:
+        year -= 1
+        month += 12
 
-    if is_julian(y, m, d):
+    if is_julian(year, month, int(day)):
         b = 0
     else:  # Gregorian
-        a = math.trunc(y / 100)
+        a = math.trunc(year / 100)
         b = 2 - a + math.trunc(a / 4)
 
-    jd = math.trunc(365.25 * (y + 4716)) + math.trunc(30.6001 * (m + 1)) + d + b - 1524.5
+    jd = math.trunc(365.25 * (year + 4716)) + math.trunc(30.6001 * (month + 1)) + day + b - 1524.5
 
     return jd
 

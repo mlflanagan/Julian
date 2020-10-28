@@ -122,7 +122,7 @@ class TestJulianDay(unittest.TestCase):
     def setUp(self) -> None:
         pass
 
-    def test_julian_days(self):
+    def test_julian_day(self):
         # very first Julian day in 4713 BC
         self.assertEqual(utils.julian_day(-4712, 1, 1.5), 0.00)
 
@@ -142,11 +142,12 @@ class TestJulianDay(unittest.TestCase):
         # Reference: https://en.m.wikipedia.org/wiki/Terrestrial_Time
         self.assertEqual(utils.julian_day(2000, 1, 1.5), 2451545.0)
 
-        # other notable dates
-        self.assertEqual(utils.julian_day(1957, 10, 4.81), 2436116.31)  # Sputnik launch example from the Meeus book
+        # Sputnik launch example from the Meeus book
+        self.assertEqual(utils.julian_day(1957, 10, 4.81), 2436116.31)
+        # right now, when I wrote this test
         self.assertEqual(utils.julian_day(
                          2020, 10, 26 + utils.day_fraction(17, 52, 21, 0)),
-                         2459149.2446875)  # today
+                         2459149.2446875)
 
     def tearDown(self) -> None:
         pass
