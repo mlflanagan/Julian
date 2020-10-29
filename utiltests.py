@@ -30,20 +30,26 @@ import unittest
 import utils
 
 
-class TestHoursMinutesSecondsVsDegrees(unittest.TestCase):
+class TestTimeAndAngle(unittest.TestCase):
     def setUp(self) -> None:
         pass
 
-    def test_hms_to_degrees(self):
-        self.assertEqual(utils.hms_to_degrees(0, 0, 0), 0.0)
-        self.assertEqual(utils.hms_to_degrees(12, 0, 0), 180.0)
-        self.assertEqual(utils.hms_to_degrees(24, 0, 0), 360.0)
-        self.assertEqual(utils.hms_to_degrees(12, 12, 12), 183.05)
+    def test_time_to_angle(self):
+        self.assertEqual(utils.time_to_angle(0, 0, 0.0), 0.0)
+        self.assertEqual(utils.time_to_angle(12, 0, 0.0), 180.0)
+        self.assertEqual(utils.time_to_angle(24, 0, 0.0), 360.0)
+        self.assertEqual(utils.time_to_angle(12, 12, 12.0), 183.05)
+        # random time
+        self.assertEqual(utils.time_to_angle(6, 42, 51.5354), 100.7147308)
+        # mean sidereal time at Greenwich at 0h UT
+        self.assertEqual(utils.time_to_angle(6, 41, 50.54841), 100.4606184)  # 100.46061837
+        self.assertEqual(utils.time_to_angle(0, 0, 8640184.812866), 36000.7700536)  # 36000.770053648
+        self.assertEqual(utils.time_to_angle(0, 0, 0.093104), 0.0003879)  # 0.000387933
 
-    def test_degrees_to_hms(self):
-        self.assertEqual(utils.degrees_to_hms(0.0), (0, 0, 0.0))
-        self.assertEqual(utils.degrees_to_hms(180.0), (12, 0, 0.0))
-        self.assertEqual(utils.degrees_to_hms(258.741859), (17, 14, 58.04616))
+    def test_angle_to_time(self):
+        self.assertEqual(utils.angle_to_time(0.0), (0, 0, 0.0))
+        self.assertEqual(utils.angle_to_time(180.0), (12, 0, 0.0))
+        self.assertEqual(utils.angle_to_time(258.741859), (17, 14, 58.04616))
 
     def tearDown(self) -> None:
         pass
@@ -153,6 +159,20 @@ class TestJulianDay(unittest.TestCase):
         pass
 
 
+class TestMeanSiderealTime(unittest.TestCase):
+    def setUp(self) -> None:
+        pass
+
+    def test_mean_sidereal_time(self):
+        # example in Meeus, page 89
+        # TODO: This result differs slightly from Meeus, who gets 128.7378734;
+        #  look for a rounding error
+        self.assertEqual(utils.sidereal_time(1987, 4, 10, 19, 21, 0), 128.73787324433215)
+
+    def tearDown(self) -> None:
+        pass
+
+
 if __name__ == '__main__':
     # prevent unittest from sorting class methods alphabetically
     unittest.TestLoader.sortTestMethodsUsing = None
@@ -160,6 +180,6 @@ if __name__ == '__main__':
 
     # To run only the tests in the specified classes:
     # suites_list = []
-    # for test_class in [TestJulianDay]:  # run only the TestJulianDay tests
+    # for test_class in [TestJulianDay]:  # e.g., run only the TestJulianDay tests
     #     suites_list.append(unittest.TestLoader().loadTestsFromTestCase(test_class))
     # results = unittest.TextTestRunner(verbosity=3).run(unittest.TestSuite(suites_list))

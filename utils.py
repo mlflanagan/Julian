@@ -21,7 +21,7 @@ def time_to_angle(hours: int, minutes: int, seconds: float) -> float:
     """
     return round(hours * DEGREES_PER_HOUR
                  + minutes * DEGREES_PER_MINUTE
-                 + seconds * DEGREES_PER_SECOND, 6)
+                 + seconds * DEGREES_PER_SECOND, 7)
 
 
 def angle_to_time(degrees: float) -> Tuple[int, int, float]:
@@ -91,40 +91,29 @@ def julian_day(year: int, month: int, day: float) -> float:
     return jd
 
 
-def sidereal_time(year: int, month: int, day: int, hours: int, minutes: int, seconds: float, longitude: float) -> float:
+def sidereal_time(year: int, month: int, day: int, hours: int, minutes: int, seconds: float) -> float:
     """
-    Return sidereal time for given year, month, day, hours, minutes, seconds and longitude.
-    Accepts partial days (e.g., 1.5 for noon on the 1st of a month).
-    TODO: Accept a datetime struct
-    Reference: www.dept.aoe.vt.edu/~cdhall/courses/aoe4134/13LocalSiderealTime.pdf
+    Computes Mean Sidereal Time _at Greenwich_
+    Reference: Meeus, page 87
     """
-
-    # get julian date
-    jd = julian_day(year, month, day)  # 2452248.5
-
-    # calculate the Greenwich sidereal time at the beginning of the day of interest
-    t_ut1 = round((jd - 2451545.0) / 36525, 8)  # 0.01926078
-
-    # Calculate Greenwich Sidereal Time with:
-    #   GST = 100.4606184 + 36000.77005361 * t_ut1 + 0.00038793 * t_ut1**2 + 2.6e-8 * t_ut1**3
-    # - drop the last term since it is negligible
-    # - modulus to get it in the range 0-360
-    # - round to some reasonable precision
-    # 100.46 degrees = the value needed to make the expression yield the correct value for GMST at
-    # 0h UT on 1 January 2000.
-    gst = (100.4606184 + 36000.77005361 * t_ut1 + 0.00038793 * t_ut1**2) % 360
-    gst = round(gst, 7)  # 73.8635304
-
-    # account for time of day
-    # a sidereal day is 23 hours, 56 minutes, 4.09053 seconds, or 1436.0681755 minutes
-    # 360 / 1436.0681755 = 0.250684477340122 degrees / day (this guy's precision is a little better than mine)
-    degrees_per_minute = 0.25068447733746215
-    gst += round(degrees_per_minute * (hours * 60 + minutes + seconds / 60), 7)
-
-    # calculate LST by adding the longitude
-    lst = round(gst + longitude, 7)
-
-    return lst
-
-
-print(sidereal_time(2001, 12, 5, 18, 45, 30, -80.408333))  # 275.600766 deg
+    # calculate JD
+    # millisecond = one 1000th (0.001) of a second
+    milliseconds = int((seconds - math.floor(seconds)) * 1000)
+    jd = julian_day(year, month, day + day_fraction(hours, minutes, int(seconds), milliseconds))
+    # then find T with
+    t = (jd - 2451545.0) / 36525
+    # Mean Sidereal Time at Greenwich _at 0hUT_ is then given by the following expression adopted
+    # by the International Astronomical Union in 1982:
+    #   MST = 6h41m50.54841s + 8640184.812866 * T + 0.093104 * T**2 - 0.0000062 * T**3
+    #
+    # This formula can be expressed in degrees and decimals as:
+    #   MST = 100.46061837 + 36000.770053608 * T + 0.000387933 * T**2 - T**3 / 38710000
+    #
+    # Multiply a time of day  by 1.00273790935 and add the result to MST at 0h UT to get sidereal
+    # time at _a given instant_ of the day.
+    #
+    # The MST at Greenwich _for any instant_ can also be found directly with:
+    #   280.46061837 + 360.98564736629 * (JD - 2451545.0) + 0.000387933 * T**2 - T**3 / 38710000
+    mst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + 0.000387933 * t**2 - t**3 / 38710000
+    mst %= 360
+    return mst
