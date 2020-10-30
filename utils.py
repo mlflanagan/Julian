@@ -8,6 +8,7 @@ Python 3.8
 
 import math
 from typing import Tuple
+import datetime
 
 # CONSTANTS
 DEGREES_PER_HOUR = 360 / 24
@@ -15,13 +16,37 @@ DEGREES_PER_MINUTE = 360 / 1440
 DEGREES_PER_SECOND = 360 / 86400
 
 
+class UTC(datetime.tzinfo):
+    """
+    tzinfo derived concrete class
+
+    Usage:
+    tz = UTC0530()
+    d = datetime.datetime.now(tz)
+    d.isoformat()
+
+    reference: https://stackoverflow.com/a/28173442
+    """
+    # can be configured here
+    _offset = datetime.timedelta(hours=-5.0)
+    _dst = datetime.timedelta(0)
+    _name = "+0530"
+
+    def utcoffset(self, dt):
+        return self.__class__._offset
+
+    def dst(self, dt):
+        return self.__class__._dst
+
+    def tzname(self, dt):
+        return self.__class__._name
+
+
 def time_to_angle(hours: int, minutes: int, seconds: float) -> float:
     """
     Convert hours, minutes, seconds to degrees
     """
-    return round(hours * DEGREES_PER_HOUR
-                 + minutes * DEGREES_PER_MINUTE
-                 + seconds * DEGREES_PER_SECOND, 7)
+    return hours * DEGREES_PER_HOUR + minutes * DEGREES_PER_MINUTE + seconds * DEGREES_PER_SECOND
 
 
 def angle_to_time(degrees: float) -> Tuple[int, int, float]:
@@ -91,9 +116,10 @@ def julian_day(year: int, month: int, day: float) -> float:
     return jd
 
 
-def sidereal_time(year: int, month: int, day: int, hours: int, minutes: int, seconds: float) -> float:
+def mean_sidereal_time(year: int, month: int, day: int,
+                       hours: int, minutes: int, seconds: float) -> float:
     """
-    Computes Mean Sidereal Time _at Greenwich_
+    Return Mean Sidereal Time _at Greenwich at 0hUT_
     Reference: Meeus, page 87
     """
     # calculate JD
@@ -114,6 +140,29 @@ def sidereal_time(year: int, month: int, day: int, hours: int, minutes: int, sec
     #
     # The MST at Greenwich _for any instant_ can also be found directly with:
     #   280.46061837 + 360.98564736629 * (JD - 2451545.0) + 0.000387933 * T**2 - T**3 / 38710000
-    mst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + 0.000387933 * t**2 - t**3 / 38710000
-    mst %= 360
+    mst = (280.46061837 + 360.98564736629 * (
+            jd - 2451545.0) + 0.000387933 * t ** 2 - t ** 3 / 38710000) % 360
     return mst
+
+
+def local_mean_time(utc_dt: datetime) -> datetime:
+    """
+    Return Local Mean Time given UTC.
+
+    Basically just convert UTC to local time. Note that Local Mean Time is the time at the
+    timezone meridian, i.e., the _average_ time in the local timezone.
+
+    On average, timezones are 15 degrees wide, so the actual time in a timezone can vary by
+    up to one hour. If you need the actual time at a specific longitude, use the
+    local_standard_time function.
+    """
+    return utc_dt.replace(tzinfo=datetime.timezone.utc).astimezone(tz=None)
+
+
+def local_standard_time(utc_dt: datetime, longitude: float) -> datetime:
+    """
+    Return datetime based on longitude offset from UTC.
+    The earth takes four minutes to rotate one degree (24 * 60 / 360 = 4).
+    So the time offset from UTC = longitude * 4 minutes per degree, given to timedelta in seconds.
+    """
+    return utc_dt + datetime.timedelta(seconds=longitude * 4 * 60)

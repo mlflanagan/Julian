@@ -26,6 +26,7 @@ Example data statements
 """
 
 import unittest
+from datetime import datetime, timezone, timedelta
 
 import utils
 
@@ -40,11 +41,11 @@ class TestTimeAndAngle(unittest.TestCase):
         self.assertEqual(utils.time_to_angle(24, 0, 0.0), 360.0)
         self.assertEqual(utils.time_to_angle(12, 12, 12.0), 183.05)
         # random time
-        self.assertEqual(utils.time_to_angle(6, 42, 51.5354), 100.7147308)
+        self.assertEqual(round(utils.time_to_angle(6, 42, 51.5354), 7), 100.7147308)
         # mean sidereal time at Greenwich at 0h UT
-        self.assertEqual(utils.time_to_angle(6, 41, 50.54841), 100.4606184)  # 100.46061837
-        self.assertEqual(utils.time_to_angle(0, 0, 8640184.812866), 36000.7700536)  # 36000.770053648
-        self.assertEqual(utils.time_to_angle(0, 0, 0.093104), 0.0003879)  # 0.000387933
+        self.assertEqual(round(utils.time_to_angle(6, 41, 50.54841), 7), 100.4606184)  # 100.46061837
+        self.assertEqual(round(utils.time_to_angle(0, 0, 8640184.812866), 7), 36000.7700536)  # 36000.770053648
+        self.assertEqual(round(utils.time_to_angle(0, 0, 0.093104), 7), 0.0003879)  # 0.000387933
 
     def test_angle_to_time(self):
         self.assertEqual(utils.angle_to_time(0.0), (0, 0, 0.0))
@@ -167,7 +168,43 @@ class TestMeanSiderealTime(unittest.TestCase):
         # example in Meeus, page 89
         # TODO: This result differs slightly from Meeus, who gets 128.7378734;
         #  look for a rounding error
-        self.assertEqual(utils.sidereal_time(1987, 4, 10, 19, 21, 0), 128.73787324433215)
+        self.assertEqual(utils.mean_sidereal_time(1987, 4, 10, 19, 21, 0), 128.73787324433215)
+
+    def tearDown(self) -> None:
+        pass
+
+
+class TestLocalMeanTime(unittest.TestCase):
+    def setUp(self) -> None:
+        pass
+
+    def test_UTC(self):
+        actual_result = utils.local_mean_time(datetime(2020, 10, 30, 0, 0, 0, 0, tzinfo=timezone.utc))
+        time_delta = timedelta(hours=0)
+        tz_obj = timezone(time_delta, name="UTC")
+        expected_result = datetime(2020, 10, 30, 0, 0, 0, 0, tzinfo=tz_obj)
+        self.assertEqual(actual_result, expected_result)
+
+    def test_America_New_York(self):
+        actual_result = utils.local_mean_time(datetime(2020, 10, 30, 0, 0, 0, 0, tzinfo=timezone.utc))
+        time_delta = timedelta(hours=-4)  # TODO: may need to automate dst
+        tz_obj = timezone(time_delta, name="EST")
+        expected_result = datetime(2020, 10, 29, 20, 0, 0, 0, tzinfo=tz_obj)
+        self.assertEqual(actual_result, expected_result)
+
+    def tearDown(self) -> None:
+        pass
+
+
+class TestLocalStandardTime(unittest.TestCase):
+    def setUp(self) -> None:
+        pass
+
+    def test_America_New_York(self):
+        actual_result = utils.local_standard_time(datetime(2020, 10, 30, 0, 0, 0, 0, tzinfo=timezone.utc), -74.346322)
+        # only the hh:mm:ss matter, set tzinfo to avoid test failure
+        expected_result = datetime(2020, 10, 29, 19, 2, 36, 882720, tzinfo=timezone.utc)
+        self.assertEqual(actual_result, expected_result)
 
     def tearDown(self) -> None:
         pass
@@ -180,6 +217,6 @@ if __name__ == '__main__':
 
     # To run only the tests in the specified classes:
     # suites_list = []
-    # for test_class in [TestJulianDay]:  # e.g., run only the TestJulianDay tests
+    # for test_class in [TestLocalMeanTime]:  # e.g., run only the TestLocalMeanTime tests
     #     suites_list.append(unittest.TestLoader().loadTestsFromTestCase(test_class))
     # results = unittest.TextTestRunner(verbosity=3).run(unittest.TestSuite(suites_list))
