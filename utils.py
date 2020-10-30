@@ -16,32 +16,6 @@ DEGREES_PER_MINUTE = 360 / 1440
 DEGREES_PER_SECOND = 360 / 86400
 
 
-class UTC(datetime.tzinfo):
-    """
-    tzinfo derived concrete class
-
-    Usage:
-    tz = UTC0530()
-    d = datetime.datetime.now(tz)
-    d.isoformat()
-
-    reference: https://stackoverflow.com/a/28173442
-    """
-    # can be configured here
-    _offset = datetime.timedelta(hours=-5.0)
-    _dst = datetime.timedelta(0)
-    _name = "+0530"
-
-    def utcoffset(self, dt):
-        return self.__class__._offset
-
-    def dst(self, dt):
-        return self.__class__._dst
-
-    def tzname(self, dt):
-        return self.__class__._name
-
-
 def time_to_angle(hours: int, minutes: int, seconds: float) -> float:
     """
     Convert hours, minutes, seconds to degrees
