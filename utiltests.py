@@ -1,29 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-Unit tests
-
-instruction statement format: [Label:] [subleq] a b [address] [; comment]
-data statement format: label: <.byte byte | .string ascii string> [; comment]
-
-Example instruction statements
-    ; whole line is a comment
-    loop: subleq Z b 6 ; trailing comment
-    loop: subleq Z b
-    loop: Z b 6
-    loop: Z b
-    subleq Z b 6
-    subleq Z b
-    Z b 6
-    Z b
-    Z
-
-Example data statements
-    b: .byte 0
-    Z: .byte 0
-    hello: .string "Hello, world!"
-"""
+"""Unit tests"""
 
 import unittest
 from datetime import datetime, timezone, timedelta
